@@ -17,7 +17,7 @@ app.use(session({
 	resave: true,
 	saveUninitialized: true
 }));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // parse form data client
 app.use(express.static(path.join(__dirname, 'public'))); // configure express to use public folder
 app.use(fileUpload()); // configure fileupload
@@ -82,6 +82,7 @@ app.post("/auth", (req,res) => {
 
 
 
-app.listen(port, () => {
-    console.log(`Server running on port: ${port}`);
+app.listen(app.get('port'),()=>{
+    console.log('Servidor Conecado',app.get('port'));
 });
+

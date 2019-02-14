@@ -80,9 +80,6 @@ app.post("/auth", (req,res) => {
 	}
 });
 
-
-
-app.listen(app.get('port'),()=>{
-    console.log('Servidor Conecado',app.get('port'));
+app.listen(port, () => {
+    console.log(`Server running on port: ${port}`);
 });
-

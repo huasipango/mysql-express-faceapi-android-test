@@ -23,10 +23,10 @@ app.use(express.static(path.join(__dirname, 'public'))); // configure express to
 app.use(fileUpload()); // configure fileupload
 
 const db = mysql.createConnection ({
-    host: 'localhost',
-    user: 'root',
-    password: '12345',
-    database: 'faceemotions'
+    host: 'us-cdbr-iron-east-03.cleardb.net',
+    user: 'bd5093cdc10674',
+    password: '60272c99',
+    database: 'heroku_e97bdfc7b2fa764'
 });
 
 // connect to database

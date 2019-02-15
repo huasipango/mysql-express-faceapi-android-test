@@ -11,6 +11,7 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const accepted_extensions = ['jpg', 'png', 'gif'];
+var file_name='';
 var upload = multer({ 
         storage: multer.diskStorage({
         destination: function(req, file, callback) {
@@ -18,7 +19,8 @@ var upload = multer({
     },
     filename: (req, file, cb) => {
         var datetimestamp = Date.now();
-        cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1]);
+        file_name = file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1];
+        cb(null, file_name);
     }
   }),fileFilter: (req, file, cb) => {
     if (accepted_extensions.some(ext => file.originalname.endsWith("." + ext))) {
@@ -66,10 +68,20 @@ app.get("/users/:id", (req,res) => {
     //res.end()
 })
 
+app.get("/userPhoto/:username", (req,res) => {
+    console.log("Devolviendo usuario con nombre: " + req.params.username)
+    const userId = req.params.username
+    const queryString = "select users.user_surnames, users.user_given_names, pictures.picture_name from pictures, users where pictures.picture_id=users.pictures_picture_id and users.user_username=?;"
+    db.query(queryString, [userId], (err, rows, fields) => {
+        res.json(rows)
+    })
+    //res.end()
+})
+
 app.post("/auth", (req,res) => {
 	var username = req.body.username;
     var password = req.body.password;
-    console.log(username+' '+password)
+    // console.log(username+' '+password)
 	if (username && password) {
 		db.query('SELECT * FROM users WHERE user_username = ? AND user_password = ?', [username, password], (err, rows, fields) => {
 			if (rows.length > 0) {
@@ -90,8 +102,36 @@ app.post("/auth", (req,res) => {
 app.post('/upload', upload.single('photo'), (req, res) => {
     if(req.file) {
         res.json(req.file);
+        db.query('INSERT INTO pictures (picture_name) VALUES(?)', file_name, (err, rows, fields) => {
+            if (err) {
+                throw err;
+            }else 
+            console.log('Ingreso correcto de foto')
+        })
     }
     else throw 'error';
+})
+
+app.post("/adduser", (req, res) => {
+    var username = req.body.username;
+    var password = req.body.password;
+    var nombres = req.body.nombres;
+    var apellidos = req.body.apellidos;
+    var fotoId = req.body.fotoId;
+    // console.log(nombres+" "+apellidos+" "+username)
+    if(nombres && apellidos){
+        db.query('INSERT INTO users (user_username, user_password, user_surnames, user_given_names, pictures_picture_id) VALUES(?,?,?,?,?)', [username, password, nombres, apellidos, fotoId], (err, rows, fields) => {
+            if(err)
+                throw err;
+            else
+                console.log('Ingreso correcto de persona')
+            res.send('Ingreso correcto de persona')
+            res.end()
+        })
+    }else{
+        res.send('Please enter the Full Name!');
+        res.end();
+    }
 })
 
 app.listen(PORT, () => {

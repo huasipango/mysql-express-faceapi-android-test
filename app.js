@@ -4,10 +4,13 @@ const bodyParser = require('body-parser');
 const mysql = require('mysql');
 const session = require('express-session');
 const path = require('path');
-const app = express();
-const morgan = require('morgan')
+const busboy = require("then-busboy");
+const morgan = require('morgan');
+const formidable = require('formidable');
 
 const port = 5000;
+
+const app = express();
 
 app.use(morgan('short'))
 // configure middleware
@@ -46,7 +49,7 @@ app.get("/", (req,res)=>{
 app.get("/users", (req,res) =>{
     const queryString = "select * from users"
     db.query(queryString, (err, rows, fields) => {
-        res.json(rows)
+        res.json({notes: "Hola"})
     })
 })
 
@@ -68,9 +71,9 @@ app.post("/auth", (req,res) => {
 			if (rows.length > 0) {
 				req.session.loggedin = true;
 				req.session.username = username;
-				res.sendStatus(200);
+				res.status(200).send('Encontrado.');
 			} else {
-				res.send('Incorrect Username and/or Password!');
+                res.status(300).send('No existe.');
 			}			
 			res.end();
 		});
@@ -78,6 +81,66 @@ app.post("/auth", (req,res) => {
 		res.send('Please enter Username and Password!');
 		res.end();
 	}
+});
+
+app.post('/upload2', function (req, res){
+    var form = new formidable.IncomingForm();
+
+    form.parse(req);
+
+    form.on('fileBegin', function (name, file){
+        file.path = __dirname + '/uploads/' + file.name;
+    });
+
+    form.on('file', function (name, file){
+        console.log('Uploaded ' + file.name);
+    });
+
+    var sql = "INSERT INTO `pictures`(`picture_name`) VALUES ('" + file.name + "')";
+ 
+    var query = db.query(sql, function(err, result) {
+        res.send('Ingreso correcto.'+result.insertId);
+    });
+    
+    });
+
+app.post("/upload", (req,res) => {
+        message = '';
+   if(req.method == "POST"){
+    //   var post  = req.body;
+    //   var name= post.user_name;
+    //   var pass= post.password;
+    //   var fname= post.first_name;
+    //   var lname= post.last_name;
+    //   var mob= post.mob_no;
+ 
+	  if (!req.files)
+		return res.status(400).send('No files were uploaded.');
+ 
+		let file = req.files.uploaded_image;
+		let img_name=file.name;
+ 
+	  	 if(file.mimetype == "image/jpeg" ||file.mimetype == "image/png"||file.mimetype == "image/jpg" ){
+                                 
+              file.mv('public/assets/img/'+file.name, function(err) {
+                             
+	              if (err)
+	                return res.status(500).send(err);
+      				var sql = "INSERT INTO `pictures`(`picture_name`) VALUES ('" + img_name + "')";
+ 
+    						var query = db.query(sql, function(err, result) {
+                                res.send('Ingreso correcto.'+result.insertId);
+    						});
+					   });
+          } else {
+            message = "This format is not allowed , please upload file with '.png','.jpg'";
+            res.send(message);
+          }
+   } else {
+      res.send("Vista principal");
+   }
+ 
+
 });
 
 app.listen(port, () => {

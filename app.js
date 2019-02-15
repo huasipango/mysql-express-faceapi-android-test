@@ -87,9 +87,9 @@ app.post("/auth", (req,res) => {
 			if (rows.length > 0) {
 				req.session.loggedin = true;
 				req.session.username = username;
-				res.status(200).send('Encontrado.');
+				res.send("true")
 			} else {
-                res.status(300).send('No existe.');
+                res.send("false")
 			}			
 			res.end();
 		});

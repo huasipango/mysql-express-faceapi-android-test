@@ -11,6 +11,7 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const accepted_extensions = ['jpg', 'png', 'gif'];
+const Request = require("request");
 var file_name='';
 var upload = multer({ 
         storage: multer.diskStorage({
@@ -31,6 +32,10 @@ var upload = multer({
 });
 const app = express();
 const PORT = 5000;
+
+//AZURE
+const az_token="66bb773690474b0692e694f4659f727d";
+
 
 app.use(express.static('public'))
 app.use(morgan('short'))
@@ -105,8 +110,23 @@ app.post('/upload', upload.single('photo'), (req, res) => {
         db.query('INSERT INTO pictures (picture_name) VALUES(?)', file_name, (err, rows, fields) => {
             if (err) {
                 throw err;
-            }else 
-            console.log('Ingreso correcto de foto')
+            }else{ 
+                console.log('Ingreso correcto de foto')//FACE API --->
+                // var face_api_url="https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=false&returnfaceAttributes=emotion,smile,blur,noise,exposure"
+                Request.post({
+                    "headers": { "content-type": "application/json", "Ocp-Apim-Subscription-Key": "66bb773690474b0692e694f4659f727d" },
+                    "url": "https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=false&returnfaceAttributes=emotion,smile,blur,noise,exposure",
+                    "body": JSON.stringify({
+                        "url": "https://raw.githubusercontent.com/huasipango/kradac-practices/master/azure-face-api-test/foto4.png",
+                        "lastname": "Raboy"
+                    })
+                }, (error, response, body) => {
+                    if(error) {
+                        return console.dir(error);
+                    }
+                    console.dir(JSON.parse(body));
+                });
+            } 
         })
     }
     else throw 'error';

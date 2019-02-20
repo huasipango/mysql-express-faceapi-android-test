@@ -72,10 +72,10 @@ app.get("/", (req,res) => {
     //res.end()
 })
 
-app.get("/userPhoto/:username", (req,res) => {
+app.get("/users/info/:username", (req,res) => {
     console.log("Devolviendo usuario con nombre: " + req.params.username)
     const userId = req.params.username
-    const queryString = "select users.user_surnames, users.user_given_names, pictures.picture_name from pictures, users where pictures.picture_id=users.pictures_picture_id and users.user_username=?;"
+    const queryString = "select users.user_surnames, users.user_given_names, pictures.picture_name, pictures.picture_azure_id from pictures, users where pictures.picture_id=users.pictures_picture_id and users.user_username=?;"
     pool.query(queryString, [userId], (err, rows, fields) => {
         res.json(rows)
     })

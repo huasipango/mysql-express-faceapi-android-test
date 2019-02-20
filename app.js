@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql');
+const fs = require('fs');
 const pool = mysql.createPool ({
     connectionLimit : 10,
     host: 'us-cdbr-iron-east-03.cleardb.net',
@@ -12,7 +13,8 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const accepted_extensions = ['jpg', 'png', 'gif'];
-const Request = require("request");
+const router = express.Router();
+const request = require('request');
 var file_name='';
 var upload = multer({ 
         storage: multer.diskStorage({
@@ -48,15 +50,6 @@ app.use(session({
 	saveUninitialized: true
 }));
 
-// // connect to database
-// db.connect((err) => {
-//     if (err) {
-//         throw err;
-//     }
-//     console.log('Connected to database');
-// })
-// global.db = db;
-
 app.get("/users", (req,res) =>{
     const queryString = "select * from users"
     pool.query(queryString, (err, rows, fields) => {
@@ -89,6 +82,28 @@ app.get("/userPhoto/:username", (req,res) => {
     //res.end()
 })
 
+app.get("/userFaceId/:picture", (req,res) => {
+    console.log("Devolviendo FaceId de Azure de la foto: " + req.params.picture)
+    var pictureName = req.params.picture
+
+    
+
+    //CONSULTO EL FACEID
+    // const queryString = "SELECT picture_azure_id FROM pictures where picture_name='"+pictureName+"'"
+    // pool.query(queryString, (err, rows, fields) => {
+    //     if(err)
+    //         throw err;
+    //     else
+    //     {
+    //         res.json(rows)
+    //     }
+    // })
+    //res.end()
+
+    
+
+})
+
 app.post("/auth", (req,res) => {
 	var username = req.body.username;
     var password = req.body.password;
@@ -112,27 +127,33 @@ app.post("/auth", (req,res) => {
 
 app.post('/upload', upload.single('photo'), (req, res) => {
     if(req.file) {
-        res.json(req.file);
-        pool.query('INSERT INTO pictures (picture_name) VALUES(?)', file_name, (err, rows, fields) => {
-            if (err) {
-                throw err;
-            }else{ 
-                console.log('Ingreso correcto de foto')//FACE API --->
-                // var face_api_url="https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=false&returnfaceAttributes=emotion,smile,blur,noise,exposure"
-                // Request.post({
-                //     "headers": { "content-type": "application/json", "Ocp-Apim-Subscription-Key": "26e242a2aaf448839cc5eb076337c4f0" },
-                //     "url": "https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=false&returnfaceAttributes=emotion,smile,blur,noise,exposure",
-                //     "body": JSON.stringify({
-                //         "url": "https://raw.githubusercontent.com/huasipango/kradac-practices/master/azure-face-api-test/foto4.png"
-                //     })
-                // }, (error, response, body) => {
-                //     if(error) {
-                //         return console.dir(error);
-                //     }
-                //     console.dir(JSON.parse(body));
-                // });
-            } 
-        })
+        //res.json(req.file);
+        request({
+            url: 'https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=false&returnfaceAttributes=emotion,smile,blur,noise,exposure',
+            method: 'POST',
+            headers: {
+              'Ocp-Apim-Subscription-Key': '26e242a2aaf448839cc5eb076337c4f0',
+              'content-type' : 'application/octet-stream',
+            },
+            encoding: null,
+            body: fs.createReadStream('C://wamp/www/mysql-express-faceapi-android-test/public/assets/img/'+file_name)
+           }, (error, response, body) => {
+                if (error) {
+                   res.json({name : error});
+                } else {
+                  var obj = JSON.parse(response.body.toString())
+                  var faceId=obj[0].faceId//Recupero el faceid de la persona en la foto
+                  pool.query('INSERT INTO pictures (picture_name, picture_azure_id) VALUES(?,?)', [file_name,faceId], (err, rows, fields) => {
+                    if (err) {
+                        throw err;
+                    }else{ 
+                        console.log('Ingreso correcto de la foto: nombre y faceId de Azure')
+                        res.send('La foto ha sido ingresada correctamente.')
+                    } 
+                })
+                
+                }
+           });   
     }
     else throw 'error';
 })

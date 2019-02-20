@@ -85,23 +85,18 @@ app.get("/userPhoto/:username", (req,res) => {
 app.get("/userFaceId/:picture", (req,res) => {
     console.log("Devolviendo FaceId de Azure de la foto: " + req.params.picture)
     var pictureName = req.params.picture
-
-    
-
+    console.log(pictureName)
     //CONSULTO EL FACEID
-    // const queryString = "SELECT picture_azure_id FROM pictures where picture_name='"+pictureName+"'"
-    // pool.query(queryString, (err, rows, fields) => {
-    //     if(err)
-    //         throw err;
-    //     else
-    //     {
-    //         res.json(rows)
-    //     }
-    // })
-    //res.end()
-
-    
-
+    const queryString = "SELECT picture_azure_id FROM pictures where picture_name='"+pictureName+"'"
+    pool.query(queryString, (err, rows, fields) => {
+        if(err)
+            throw err;
+        else
+        {
+            res.json(rows)
+        }
+        res.end()
+    })
 })
 
 app.post("/auth", (req,res) => {

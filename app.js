@@ -75,7 +75,7 @@ app.get("/", (req,res) => {
 app.get("/users/info/:username", (req,res) => {
     console.log("Devolviendo usuario con nombre: " + req.params.username)
     const userId = req.params.username
-    const queryString = "select users.user_surnames, users.user_given_names, pictures.picture_name, pictures.picture_azure_id from pictures, users where pictures.picture_id=users.pictures_picture_id and users.user_username=?;"
+    const queryString = "select users.user_surnames, users.user_given_names, pictures.picture_name, pictures.picture_azure_id, users.users_voiceit_id from pictures, users where pictures.picture_id=users.pictures_picture_id and users.user_username=?;"
     pool.query(queryString, [userId], (err, rows, fields) => {
         res.json(rows)
     })
@@ -160,15 +160,38 @@ app.post("/adduser", (req, res) => {
     var apellidos = req.body.apellidos;
     var fotoId = req.body.fotoId;
     // console.log(nombres+" "+apellidos+" "+username)
+    var auth = new Buffer("key_f08f39b92a67468eaf95809fc1734bfb" + ':' + "tok_c2f15a5641154bdc84cd8eb8166c04b0").toString('base64');
+    
+
+    //=============================
     if(nombres && apellidos){
-        pool.query('INSERT INTO users (user_username, user_password, user_surnames, user_given_names, pictures_picture_id) VALUES(?,?,?,?,?)', [username, password, nombres, apellidos, fotoId], (err, rows, fields) => {
-            if(err)
-                throw err;
-            else
-                console.log('Ingreso correcto de persona')
-            res.send('Ingreso correcto de persona')
-            res.end()
-        })
+
+        //=============== si el formulario es correcto entra
+        request({
+            url: 'https://api.voiceit.io/users',
+            method: 'POST',
+            headers: {
+              Authorization: 'Basic ' + auth        
+            }        
+           }, (error, response, body) => {
+                if (error) {
+                   res.json({name : error});
+                } else {
+                  var obj = JSON.parse(response.body.toString())
+                  var voiceitId=obj.userId//Recupero el faceid de la persona en la foto
+                    
+                  pool.query('INSERT INTO users (user_username, user_password, user_surnames, user_given_names, pictures_picture_id, users_voiceit_id) VALUES(?,?,?,?,?,?)', [username, password, nombres, apellidos, fotoId, voiceitId], (err, rows, fields) => {
+                    if(err)
+                        throw err;
+                    else
+                        console.log('Ingreso correcto de persona')
+                    res.send('Ingreso correcto de persona')
+                    res.end()
+                })
+                }
+           });
+        //===============
+        
     }else{
         res.send('Please enter the Full Name!');
         res.end();

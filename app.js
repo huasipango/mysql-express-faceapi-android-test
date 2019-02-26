@@ -40,7 +40,7 @@ const PORT = 5000;
 const az_token="66bb773690474b0692e694f4659f727d";
 
 
-app.use(express.static('public'))
+app.use(express.static('public/assets/img'))
 app.use(morgan('short'))
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
@@ -131,7 +131,7 @@ app.post('/upload', upload.single('photo'), (req, res) => {
               'content-type' : 'application/octet-stream',
             },
             encoding: null,
-            body: fs.createReadStream('C://wamp/www/mysql-express-faceapi-android-test/public/assets/img/'+file_name)
+            body: fs.createReadStream('169.62.217.179:5000/public/assets/img/'+file_name)
            }, (error, response, body) => {
                 if (error) {
                    res.json({name : error});
